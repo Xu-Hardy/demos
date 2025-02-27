@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Speed Test</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+        }
+        body {
+            background: #f4f6f9;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            margin: auto;
+        }
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin: 10px 0 5px;
+            text-align: left;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+        }
+        button {
+            background: #007BFF;
+            color: white;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s ease-in-out;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .progress-container {
+            display: none;
+            margin-top: 20px;
+        }
+        .progress-bar {
+            width: 0%;
+            height: 12px;
+            background: linear-gradient(90deg, #4CAF50, #00C853);
+            border-radius: 6px;
+            transition: width 0.5s ease-in-out;
+        }
+        .results {
+            display: none;
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            text-align: left;
+        }
+        .history {
+            margin-top: 20px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: left;
+        }
+        .history h2 {
+            margin-bottom: 10px;
+        }
+        .history-list {
+            list-style: none;
+            padding: 0;
+        }
+        .history-item {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+            cursor: pointer;
+        }
+        .history-item:hover {
+            background: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Network Speed Test</h1>
+        <form id="speedTestForm">
+            <label for="server_host">Server Host:</label>
+            <input type="text" id="server_host" name="server_host" value="127.0.0.1">
+
+            <label for="duration">Duration (seconds):</label>
+            <input type="number" id="duration" name="duration" value="10">
+
+            <label for="protocol">Protocol:</label>
+            <select id="protocol" name="protocol">
+                <option value="tcp">TCP</option>
+                <option value="udp">UDP</option>
+            </select>
+
+            <button type="submit">Start Test</button>
+        </form>
+
+        <div class="progress-container">
+            <p>Testing Speed... Please Wait</p>
+            <div style="width: 100%; background-color: #ddd; border-radius: 6px;">
+                <div class="progress-bar"></div>
+            </div>
+        </div>
+
+        <div class="results" id="results">
+            <h2>Results:</h2>
+            <p><strong>Sent Speed:</strong> <span id="sent_mbps"></span></p>
+            <p><strong>Received Speed:</strong> <span id="received_mbps"></span></p>
+            <p><strong>Data Sent:</strong> <span id="sent_bytes"></span></p>
+            <p><strong>Data Received:</strong> <span id="received_bytes"></span></p>
+        </div>
+
+        <div class="history">
+            <h2>History</h2>
+            <ul class="history-list" id="history-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            loadHistory();
+        });
+
+        document.getElementById('speedTestForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+
+            // 清空旧结果
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('sent_mbps').textContent = "";
+            document.getElementById('received_mbps').textContent = "";
+            document.getElementById('sent_bytes').textContent = "";
+            document.getElementById('received_bytes').textContent = "";
+
+            // 显示进度条
+            document.querySelector('.progress-container').style.display = 'block';
+            let progressBar = document.querySelector('.progress-bar');
+            progressBar.style.width = "0%";
+
+            let duration = parseInt(document.getElementById('duration').value);
+            let progress = 0;
+            let intervalTime = duration / 10 * 1000;
+            let progressInterval = setInterval(() => {
+                if (progress < 100) {
+                    progress += 10;
+                    progressBar.style.width = progress + "%";
+                }
+            }, intervalTime);
+
+            fetch('/test_speed', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(progressInterval);
+                progressBar.style.width = "100%";
+
+                if (data.error) {
+                    document.getElementById('results').innerHTML = `<p style="color: red;"><strong>Error:</strong> ${data.error}</p>`;
+                } else {
+                    document.getElementById('sent_mbps').textContent = data.sent_mbps;
+                    document.getElementById('received_mbps').textContent = data.received_mbps;
+                    document.getElementById('sent_bytes').textContent = data.sent_bytes;
+                    document.getElementById('received_bytes').textContent = data.received_bytes;
+
+                    saveToHistory(data);
+                }
+
+                document.getElementById('results').style.display = 'block';
+                setTimeout(() => {
+                    document.querySelector('.progress-container').style.display = 'none';
+                }, 2000);
+            })
+            .catch(error => {
+                clearInterval(progressInterval);
+                progressBar.style.width = "100%";
+                document.getElementById('results').innerHTML = `<p style="color: red;"><strong>Error:</strong> ${error}</p>`;
+            });
+        });
+
+        function saveToHistory(result) {
+            let history = JSON.parse(localStorage.getItem("speedTestHistory")) || [];
+            history.unshift({
+                timestamp: new Date().toLocaleString(),
+                result
+            });
+            localStorage.setItem("speedTestHistory", JSON.stringify(history));
+            loadHistory();
+        }
+
+        function loadHistory() {
+            let history = JSON.parse(localStorage.getItem("speedTestHistory")) || [];
+            let historyList = document.getElementById("history-list");
+            historyList.innerHTML = "";
+            history.forEach((item, index) => {
+                let li = document.createElement("li");
+                li.classList.add("history-item");
+                li.textContent = `${item.timestamp} - ${item.result.sent_mbps} / ${item.result.received_mbps}`;
+                li.onclick = () => alert(JSON.stringify(item.result, null, 2));
+                historyList.appendChild(li);
+            });
+        }
+    </script>
+</body>
+</html>
