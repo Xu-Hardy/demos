@@ -1,6 +1,13 @@
 services:
   flask-app:
-    image: cloudsmithy/mian:latest
+    build:
+      context: .  # 当前目录作为构建上下文
+      dockerfile: Dockerfile  # 可选，默认就是 Dockerfile，按需要设置
+    image: cloudsmithy/mian:latest  # 镜像名称
     ports:
-      - "50011:5000"
-    restart: always
+      - "50011:5000"  # 映射端口
+    restart: always  # 自动重启容器
+    environment:
+      - FLASK_ENV=production  # 你可以根据需要添加环境变量
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
