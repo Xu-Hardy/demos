@@ -1,5 +1,6 @@
-from flask import Flask, render_template, request
-
+from flask import Flask, render_template, request, jsonify
+import docker
+client = docker.from_env()
 app = Flask(__name__)
 
 # 配方比例配置
@@ -20,9 +21,28 @@ SUMMARY_TABLE = [
     {"type": "面包", "flour": 250, "water": "190", "yeast": 2.9}
 ]
 
-
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
 def index():
+    return render_template('index.html')
+
+
+@app.route('/print')
+def print():
+    return render_template('airprint.html')
+
+@app.route('/restart', methods=['GET', 'POST'])
+def restart_container():
+    container_name = 'airprint'  # 你要重启的容器名字
+    try:
+        container = client.containers.get(container_name)
+        container.restart()
+        return jsonify({'status': 'success', 'message': f'Container {container_name} restarted successfully!'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/mian', methods=['GET', 'POST'])
+def mian():
     result = None
     error = None
 
@@ -70,7 +90,9 @@ def index():
         except:
             error = "请输入有效的数值"
 
-    return render_template('index.html', result=result, error=error, summary_table=SUMMARY_TABLE)
+    return render_template('mian.html', result=result, error=error, summary_table=SUMMARY_TABLE)
+
+
 
 
 @app.route('/ddz')

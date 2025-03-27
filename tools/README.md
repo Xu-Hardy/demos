@@ -53,7 +53,7 @@ python app.py
 .
 ├── app.py              # 主程序入口
 ├── templates/
-│   ├── index.html      # 面食配方页面
+│   ├── airprint.html      # 面食配方页面
 │   └── score.html      # 斗地主计分器页面
 ├── static/             # （可选）静态资源目录
 └── README.md

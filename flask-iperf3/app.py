@@ -10,7 +10,7 @@
 #
 # @app.route('/')
 # def index():
-#     return render_template('index.html')
+#     return render_template('airprint.html')
 #
 # @app.route('/test_speed', methods=['POST'])
 # def test_speed():
