@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>斗地主多玩家计分器</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC&display=swap" rel="stylesheet"/>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to right, #e0f7fa, #f1f8e9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      background-color: #ffffff;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #2e7d32;
+      margin-bottom: 30px;
+    }
+
+    .result, .round-scores {
+      background-color: #f9fbe7;
+      padding: 20px;
+      border-radius: 12px;
+      margin-top: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .result h3,
+    .round-scores h3 {
+      margin-top: 0;
+      color: #33691e;
+    }
+
+    .player-score {
+      display: inline-block;
+      margin: 10px 20px 10px 0;
+      font-size: 16px;
+      color: #444;
+    }
+
+    .player-score span {
+      font-weight: bold;
+      margin-right: 4px;
+    }
+
+    .player-inputs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 20px;
+      justify-content: space-between;
+    }
+
+    .player-inputs div {
+      flex: 1 1 30%;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .player-inputs span {
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      transition: border-color 0.2s;
+    }
+
+    input[type="number"]:focus {
+      border-color: #66bb6a;
+      outline: none;
+    }
+
+    input[readonly] {
+      background-color: #f0f0f0;
+      color: #888;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      background-color: #43a047;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #388e3c;
+    }
+
+    ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    li {
+      padding: 8px 0;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 15px;
+      color: #555;
+    }
+
+    @media (max-width: 480px) {
+      .player-inputs div {
+        flex: 1 1 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>斗地主多玩家计分器</h1>
+
+    <!-- 当前总分 -->
+    <div class="result" id="totalScores">
+      <h3>当前总分</h3>
+      <span class="player-score"><span>玩家1:</span> 0</span>
+      <span class="player-score"><span>玩家2:</span> 0</span>
+      <span class="player-score"><span>玩家3:</span> 0</span>
+    </div>
+
+    <!-- 输入区 -->
+    <div class="player-inputs">
+      <div>
+        <span>玩家1</span>
+        <input type="number" id="player1Score" oninput="handleInputChange()">
+      </div>
+      <div>
+        <span>玩家2</span>
+        <input type="number" id="player2Score" oninput="handleInputChange()">
+      </div>
+      <div>
+        <span>玩家3</span>
+        <input type="number" id="player3Score" oninput="handleInputChange()">
+      </div>
+    </div>
+    <button onclick="addRoundScore()">添加本轮得分</button>
+
+    <!-- 每轮记录 -->
+    <div class="round-scores">
+      <h3>每轮分数记录</h3>
+      <ul id="roundScoresList"></ul>
+    </div>
+  </div>
+
+
+
+
+  <script>
+    let totalScores = [0, 0, 0];
+    let roundScores = [];
+
+    function handleInputChange() {
+      const inputs = [
+        document.getElementById("player1Score"),
+        document.getElementById("player2Score"),
+        document.getElementById("player3Score")
+      ];
+
+      const values = inputs.map(input =>
+        input.value.trim() === "" ? null : parseInt(input.value)
+      );
+
+      const filledIndexes = values.map((val, idx) => val !== null ? idx : null).filter(i => i !== null);
+
+      // 只有两个输入时才自动推算
+      if (filledIndexes.length === 2) {
+        const missingIndex = [0, 1, 2].find(i => !filledIndexes.includes(i));
+        const sum = values[filledIndexes[0]] + values[filledIndexes[1]];
+        const fillValue = -sum;
+
+        inputs[missingIndex].value = fillValue;
+        inputs[missingIndex].readOnly = true;
+        inputs[missingIndex].style.backgroundColor = "#f0f0f0";
+      } else {
+        // 清空所有只读状态
+        inputs.forEach(input => {
+          input.readOnly = false;
+          input.style.backgroundColor = "";
+        });
+      }
+    }
+
+    function addRoundScore() {
+      const inputs = [
+        document.getElementById("player1Score"),
+        document.getElementById("player2Score"),
+        document.getElementById("player3Score")
+      ];
+      const values = inputs.map(input => parseInt(input.value) || 0);
+
+      // 累加总分
+      values.forEach((val, idx) => totalScores[idx] += val);
+      roundScores.push(values);
+
+      updateTotalScores();
+      updateRoundScores();
+
+      // 清空输入框
+      inputs.forEach(input => {
+        input.value = "";
+        input.readOnly = false;
+        input.style.backgroundColor = "";
+      });
+    }
+
+    function updateTotalScores() {
+      const totalScoresDiv = document.getElementById("totalScores");
+      let html = "<h3>当前总分</h3>";
+      for (let i = 0; i < 3; i++) {
+        html += `<span class="player-score"><span>玩家${i + 1}:</span> ${totalScores[i]}</span>`;
+      }
+      totalScoresDiv.innerHTML = html;
+    }
+
+    function updateRoundScores() {
+      const list = document.getElementById("roundScoresList");
+      list.innerHTML = "";
+      roundScores.forEach((round, idx) => {
+        let text = `第${idx + 1}轮：`;
+        round.forEach((score, i) => {
+          text += `<span class="player-score"><span>玩家${i + 1}:</span> ${score}</span>`;
+        });
+        list.innerHTML += `<li>${text}</li>`;
+      });
+    }
+  </script>
+<a href="/" class="float-btn">切换到配方计算器</a>
+
+<style>
+  .float-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background-color: #43a047;
+    color: white;
+    padding: 12px 18px;
+    border-radius: 30px;
+    font-size: 14px;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    z-index: 999;
+  }
+
+  .float-btn:hover {
+    background-color: #388e3c;
+    transform: scale(1.05);
+  }
+</style>
+
+</body>
+</html>

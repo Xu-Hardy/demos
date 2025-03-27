@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>面食比例计算器</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to right, #f0f4f7, #e0f7fa);
+            color: #333;
+        }
+
+        .container {
+            max-width: 680px;
+            margin: 50px auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2e7d32;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 10px 14px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        input[type="number"]:focus,
+        select:focus {
+            border-color: #66bb6a;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 187, 106, 0.2);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #43a047;
+        }
+
+        .result, .error {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        .result {
+            background-color: #e8f5e9;
+            border-left: 6px solid #66bb6a;
+        }
+
+        .error {
+            background-color: #ffebee;
+            border-left: 6px solid #e53935;
+            color: #c62828;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                margin: 20px;
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>面食比例计算器</h1>
+        <form method="POST">
+            <div class="form-group">
+                <label for="flour">面粉量（克）：</label>
+                <input type="number" id="flour" name="flour" step="0.1" required>
+            </div>
+            <div class="form-group">
+                <label for="recipe_type">选择面食类型：</label>
+                <select id="recipe_type" name="recipe_type" required>
+                    <option value="dumpling">饺子皮</option>
+                    <option value="noodle">面条</option>
+                    <option value="steam_bun">馒头</option>
+                    <option value="pie">馅饼皮</option>
+                    <option value="bread">面包</option>
+                </select>
+            </div>
+            <button type="submit">计算</button>
+        </form>
+
+        {% if result %}
+        <div class="result">
+            <h2>计算结果</h2>
+            <p>类型：<strong>{{ result.type }}</strong></p>
+            <p>面粉：{{ result.flour }} 克</p>
+            <p>水：{{ result.water }} 毫升</p>
+            {% if result.yeast > 0 %}
+            <p>酵母：{{ result.yeast }} 克</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="error">
+            <p>{{ error }}</p>
+        </div>
+        {% endif %}
+
+        <h2 style="margin-top: 40px;">参考比例表</h2>
+        <p style="font-size: 14px; color: #777;">注：除面包为250克，其余以280克为基准</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>面食类型</th>
+                    <th>面粉（克）</th>
+                    <th>水（毫升）</th>
+                    <th>酵母（克）</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in summary_table %}
+                <tr>
+                    <td>{{ row.type }}</td>
+                    <td>{{ row.flour }}</td>
+                    <td>{{ row.water }}</td>
+                    <td>{{ row.yeast }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+<a href="/ddz" class="float-btn">切换到斗地主计分器</a>
+
+<style>
+  .float-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background-color: #43a047;
+    color: white;
+    padding: 12px 18px;
+    border-radius: 30px;
+    font-size: 14px;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    z-index: 999;
+  }
+
+  .float-btn:hover {
+    background-color: #388e3c;
+    transform: scale(1.05);
+  }
+</style>
+
+</body>
+</html>
