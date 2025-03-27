@@ -1,0 +1,10 @@
+name: Tag Trigger (Reusable)
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  call-docker:
+    uses: ./main/.github/workflows/docker.yml
